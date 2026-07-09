@@ -19,7 +19,7 @@ export default function Home() {
   const {
     currentView,
     setUser,
-    setCategories,
+    fetchCategories,
     setBooks,
     setLoading,
   } = useAppStore()
@@ -49,15 +49,6 @@ export default function Home() {
     } catch { /* ignore */ }
 
     // Fetch categories
-    const fetchCategories = async () => {
-      try {
-        const res = await fetch('/api/categories')
-        const json = await res.json()
-        if (json.success) {
-          setCategories(json.data)
-        }
-      } catch { /* silent */ }
-    }
     fetchCategories()
 
     // Fetch initial books

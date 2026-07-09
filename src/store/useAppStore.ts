@@ -83,6 +83,7 @@ interface AppState {
   categories: Category[]
   setBooks: (books: Book[]) => void
   setCategories: (cats: Category[]) => void
+  fetchCategories: () => Promise<boolean>
   activeCategory: string | null
   setActiveCategory: (slug: string | null) => void
   searchQuery: string
@@ -91,6 +92,7 @@ interface AppState {
   setSortBy: (s: string) => void
   isLoading: boolean
   setLoading: (l: boolean) => void
+  categoriesLoading: boolean
 
   selectedBook: Book | null
   setSelectedBook: (book: Book | null) => void
@@ -128,6 +130,23 @@ export const useAppStore = create<AppState>((set, get) => ({
   categories: [],
   setBooks: (books) => set({ books }),
   setCategories: (cats) => set({ categories: cats }),
+  categoriesLoading: false,
+  fetchCategories: async () => {
+    set({ categoriesLoading: true })
+    try {
+      const res = await fetch('/api/categories')
+      const json = await res.json()
+      if (json.success && Array.isArray(json.data)) {
+        set({ categories: json.data, categoriesLoading: false })
+        return true
+      }
+      set({ categoriesLoading: false })
+      return false
+    } catch {
+      set({ categoriesLoading: false })
+      return false
+    }
+  },
   activeCategory: null,
   setActiveCategory: (slug) => set({ activeCategory: slug }),
   searchQuery: '',

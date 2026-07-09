@@ -60,17 +60,24 @@ export default function AuthModal() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: loginEmail, password: loginPassword }),
       })
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}))
+        toast.error(json.error || `Server error (${res.status})`)
+        return
+      }
       const json = await res.json()
       if (json.success) {
         const userData = json.data
         setUser(userData)
         localStorage.setItem('bookfriends-user', JSON.stringify(userData))
         toast.success(`Welcome back, ${userData.name}!`)
+        // Go to feed directly for returning users
         setView('feed')
       } else {
         toast.error(json.error || 'Login failed')
       }
-    } catch {
+    } catch (err) {
+      console.error('Login error:', err)
       toast.error('Network error. Please try again.')
     } finally {
       setLoginLoading(false)
@@ -93,17 +100,23 @@ export default function AuthModal() {
           preferredLanguages: 'english',
         }),
       })
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}))
+        toast.error(json.error || `Server error (${res.status})`)
+        return
+      }
       const json = await res.json()
       if (json.success) {
         const userData = json.data
         setUser(userData)
         localStorage.setItem('bookfriends-user', JSON.stringify(userData))
         toast.success(`Welcome to BookFriends, ${userData.name}!`)
-        setView('feed')
+        setView('onboarding-categories')
       } else {
         toast.error(json.error || 'Registration failed')
       }
-    } catch {
+    } catch (err) {
+      console.error('Register error:', err)
       toast.error('Network error. Please try again.')
     } finally {
       setRegLoading(false)
