@@ -58,6 +58,7 @@ export default function AddBookModal() {
         title: title.trim(),
         author: author.trim(),
         language,
+        addedById: user?.id || undefined,
       }
       if (publisher.trim()) body.publisher = publisher.trim()
       if (categoryId) body.categoryId = categoryId
@@ -77,7 +78,7 @@ export default function AddBookModal() {
         // Refresh books
         const booksRes = await fetch('/api/books')
         const booksJson = await booksRes.json()
-        if (booksJson.success) setBooks(booksJson.data)
+        if (booksJson.success) setBooks(booksJson.data.books)
         setView('feed')
       } else {
         toast.error(json.error || 'Failed to add book')

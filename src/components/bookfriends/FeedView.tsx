@@ -79,7 +79,6 @@ export default function FeedView() {
     setHasMore(true)
     setAllBooks([])
     fetchBooks(1, false)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeCategory, sortBy])
 
   // Separate search effect with debounce
@@ -95,7 +94,6 @@ export default function FeedView() {
     return () => {
       if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery])
 
   // Infinite scroll

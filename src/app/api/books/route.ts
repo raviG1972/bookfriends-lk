@@ -75,13 +75,20 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { title, author, publisher, language, categoryId, description, year, pageCount } = body
+    const { title, author, publisher, language, categoryId, description, year, pageCount, addedById } = body
 
     if (!title || !author || !language) {
       return NextResponse.json(
         { success: false, data: null, error: 'title, author, and language are required' },
         { status: 400 }
       )
+    }
+
+    // Ensure the addedById user exists, otherwise use 'system'
+    let userId = 'system'
+    if (addedById) {
+      const userExists = await db.user.findUnique({ where: { id: addedById } })
+      if (userExists) userId = addedById
     }
 
     const book = await db.book.create({
@@ -94,10 +101,16 @@ export async function POST(request: NextRequest) {
         description: description || null,
         year: year ? parseInt(year, 10) : null,
         pageCount: pageCount ? parseInt(pageCount, 10) : null,
-        addedById: 'system', // default, should be replaced with auth user id
+        addedById: userId,
       },
       include: { category: true },
     })
+
+    // Update category book count
+    if (categoryId) {
+      const count = await db.book.count({ where: { categoryId } })
+      await db.category.update({ where: { id: categoryId }, data: { bookCount: count } })
+    }
 
     return NextResponse.json({ success: true, data: book }, { status: 201 })
   } catch (error) {

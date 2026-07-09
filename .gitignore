@@ -30,25 +30,44 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files
+.env
+.env.local
+.env.production.local
+.env.development.local
 
 # vercel
 .vercel
 
-
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-local-*
+
+# Sandbox / IDE specific
 .claude
 .z-ai-config
 *.log
 dev.log
 dev.out.log
+server.log
 test
 prompt
+download/
+upload/
+worklog.md
 
-server.log
 # Skills directory
 /skills/
+
+# Database file (regenerated on deploy)
+# Uncomment if you don't want to track the SQLite file:
+# db/custom.db
+
+# Sandbox-specific (not needed in production)
+.zscripts/
+Caddyfile
+keep-alive.sh
+download/
+upload/
+examples/
+mini-services/
