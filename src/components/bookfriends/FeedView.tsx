@@ -30,15 +30,17 @@ export default function FeedView() {
 
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
-  const [allBooks, setAllBooks] = useState<Book[]>([])
   const loadMoreRef = useRef<HTMLDivElement>(null)
 
   // Categories that have books (from the categories in store)
   const categoriesWithBooks = categories.filter((c) => c.bookCount > 0)
 
+  // Track the initial mount — if page.tsx already loaded books into the store,
+  // we don't need to re-fetch on first render.
+  const initialBooksLoaded = useRef(books.length > 0)
+
   const fetchBooks = useCallback(
     async (pageNum: number, append: boolean = false) => {
-      if (isLoading) return
       setLoading(true)
       try {
         const params = new URLSearchParams()
@@ -56,10 +58,9 @@ export default function FeedView() {
         if (json.success) {
           const data = json.data.books as Book[]
           if (append) {
-            setAllBooks((prev) => [...prev, ...data])
-            setBooks([...allBooks, ...data])
+            const existing = useAppStore.getState().books
+            setBooks([...existing, ...data])
           } else {
-            setAllBooks(data)
             setBooks(data)
           }
           setHasMore(data.length === 20)
@@ -70,14 +71,19 @@ export default function FeedView() {
         setLoading(false)
       }
     },
-    [isLoading, activeCategory, categories, sortBy, searchQuery, setLoading, setBooks, allBooks]
+    [activeCategory, categories, sortBy, searchQuery, setLoading, setBooks]
   )
 
-  // Initial fetch + reset on filter change
+  // Re-fetch when filters change (skip the very first render if books already loaded)
   useEffect(() => {
+    if (initialBooksLoaded.current && page === 1 && !activeCategory && sortBy === 'popular' && !searchQuery) {
+      // First render with pre-loaded data — skip the redundant fetch
+      initialBooksLoaded.current = false
+      return
+    }
+    initialBooksLoaded.current = false
     setPage(1)
     setHasMore(true)
-    setAllBooks([])
     fetchBooks(1, false)
   }, [activeCategory, sortBy])
 
@@ -88,7 +94,6 @@ export default function FeedView() {
     searchTimerRef.current = setTimeout(() => {
       setPage(1)
       setHasMore(true)
-      setAllBooks([])
       fetchBooks(1, false)
     }, 500)
     return () => {
@@ -173,7 +178,7 @@ export default function FeedView() {
 
         {/* Masonry grid */}
         <div className="max-w-[1600px] mx-auto px-4 py-6">
-          {isLoading && allBooks.length === 0 ? (
+          {isLoading && books.length === 0 ? (
             <div className="masonry-grid">
               {Array.from({ length: 10 }).map((_, i) => (
                 <div key={i} className="masonry-item">
@@ -188,7 +193,7 @@ export default function FeedView() {
                 </div>
               ))}
             </div>
-          ) : allBooks.length === 0 ? (
+          ) : books.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <BookOpen className="w-16 h-16 text-muted-foreground/30 mb-4" />
               <h3 className="text-lg font-semibold text-muted-foreground mb-2">
@@ -210,7 +215,7 @@ export default function FeedView() {
             </div>
           ) : (
             <div className="masonry-grid">
-              {allBooks.map((book, index) => (
+              {books.map((book, index) => (
                 <div key={book.id} className="masonry-item">
                   <BookCard book={book} showDescription={index % 2 === 0} />
                 </div>
@@ -222,7 +227,7 @@ export default function FeedView() {
           {hasMore && <div ref={loadMoreRef} className="h-10" />}
 
           {/* Loading more indicator */}
-          {isLoading && allBooks.length > 0 && (
+          {isLoading && books.length > 0 && (
             <div className="flex justify-center py-8">
               <div className="flex gap-1">
                 {[0, 1, 2].map((i) => (

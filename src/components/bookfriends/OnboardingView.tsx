@@ -76,27 +76,21 @@ export default function OnboardingView({ step }: OnboardingViewProps) {
     }
     localStorage.setItem('bookfriends-prefs', JSON.stringify(prefs))
 
-    // Fetch books with selected preferences
+    // Fetch all books (preferences are saved for future filtering,
+    // but the initial feed shows all books so users always see content)
     try {
       const params = new URLSearchParams()
       if (selectedLanguages.length > 0) {
         params.set('language', selectedLanguages.join(','))
       }
-      if (selectedCategories.length > 0) {
-        params.set('categoryId', selectedCategories.join(','))
-      }
+      params.set('sort', 'popular')
       const res = await fetch(`/api/books?${params.toString()}`)
       const json = await res.json()
       if (json.success) {
         setBooks(json.data.books)
       }
     } catch {
-      // fallback: fetch all books
-      try {
-        const res = await fetch('/api/books')
-        const json = await res.json()
-        if (json.success) setBooks(json.data.books)
-      } catch { /* ignore */ }
+      // fallback: use whatever books are already in the store
     }
 
     setLoading(false)

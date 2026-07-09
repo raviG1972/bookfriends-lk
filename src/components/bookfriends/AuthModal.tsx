@@ -49,6 +49,25 @@ export default function AuthModal() {
     return Object.keys(errors).length === 0
   }
 
+  const isOnboardingComplete = () => {
+    try {
+      const prefs = localStorage.getItem('bookfriends-prefs')
+      if (prefs) {
+        const parsed = JSON.parse(prefs)
+        return parsed.onboardingComplete === true
+      }
+    } catch { /* ignore */ }
+    return false
+  }
+
+  const navigateAfterAuth = (isRegistration: boolean) => {
+    if (isRegistration && !isOnboardingComplete()) {
+      setView('onboarding-categories')
+    } else {
+      setView('feed')
+    }
+  }
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validateLogin()) return
@@ -106,11 +125,11 @@ export default function AuthModal() {
           setUser(json.data)
           localStorage.setItem('bookfriends-user', JSON.stringify(json.data))
           toast.success(`Welcome to BookFriends, ${json.data.name}!`)
-          setView('onboarding-categories')
+          navigateAfterAuth(true)
           return
         }
         if (res.status === 409) {
- toast.error('Email already registered')
+          toast.error('Email already registered')
           return
         }
       }
@@ -119,7 +138,7 @@ export default function AuthModal() {
     const result = registerLocal(regName, regEmail, regPassword)
     if (result.success) {
       toast.success(`Welcome to BookFriends, ${regName}!`)
-      setView('onboarding-categories')
+      navigateAfterAuth(true)
     } else {
       toast.error(result.error || 'Registration failed')
     }
@@ -129,7 +148,7 @@ export default function AuthModal() {
   const handleDemoLogin = () => {
     loginAsDemo()
     toast.success('Welcome back, Demo User!')
-    setView('onboarding-categories')
+    navigateAfterAuth(false)
   }
 
   return (

@@ -21,7 +21,6 @@ export default function Home() {
     setUser,
     fetchCategories,
     setBooks,
-    setLoading,
   } = useAppStore()
 
   // Restore state from localStorage on mount
@@ -51,9 +50,9 @@ export default function Home() {
     // Fetch categories
     fetchCategories()
 
-    // Fetch initial books
+    // Fetch initial books silently (don't set isLoading so FeedView
+    // can render the data immediately when it mounts)
     const fetchBooks = async () => {
-      setLoading(true)
       try {
         const res = await fetch('/api/books')
         const json = await res.json()
@@ -61,9 +60,6 @@ export default function Home() {
           setBooks(json.data.books)
         }
       } catch { /* silent */ }
-      finally {
-        setLoading(false)
-      }
     }
     fetchBooks()
   }, [])

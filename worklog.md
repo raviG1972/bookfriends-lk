@@ -97,3 +97,23 @@ Stage Summary:
 - APIs return correct data
 - Landing page renders with BookFriends branding
 - Phase 1 complete: Landing, Onboarding, Pinterest Feed, Book Detail, Auth, Bookshelf, Search, Add Book
+
+---
+Task ID: 12
+Agent: Main
+Task: Fix "No books found" issue and auth navigation
+
+Work Log:
+- Diagnosed root cause: OnboardingView's handleFinish sent multiple comma-separated category IDs to /api/books, which only supports single categoryId filter → returned 0 books
+- Fixed FeedView.tsx: removed local allBooks state (was racing with store), removed isLoading guard that caused silent fetch drops, added initialBooksLoaded ref to skip redundant first fetch
+- Fixed OnboardingView.tsx: handleFinish no longer sends categoryId parameter, only sends language preference; fetches all books sorted by popular
+- Fixed AuthModal.tsx: added isOnboardingComplete() helper and navigateAfterAuth() to correctly route users (login/demo → feed, register → onboarding unless already complete)
+- Fixed page.tsx: removed setLoading() from initial book fetch to prevent interference with FeedView's loading state
+- Verified via browser: landing page → onboarding (16 categories from DB) → language selection → feed (20 books displayed with masonry grid)
+- Verified login API works: demo@bookfriends.lk / demo123 returns success with user data
+
+Stage Summary:
+- "No books found" bug fixed — was caused by multi-category ID filter mismatch in API
+- Feed now reliably shows all 20 books after onboarding
+- Auth navigation fixed: demo login goes to feed (not onboarding) if already completed
+- Client-side auth fallback ensures login/register work even without server
