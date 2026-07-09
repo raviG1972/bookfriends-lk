@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
 }
 
 model User {
@@ -18,12 +19,12 @@ model User {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  bookshelves    Bookshelf[]
-  comments       Comment[]
-  pageRequests   PageRequest[]
-  addedBooks     Book[]      @relation("BookAdder")
-  editSuggests   BookEdit[]
-  claimedBooks  Book[]      @relation("BookClaimer")
+  bookshelves     Bookshelf[]
+  comments        Comment[]
+  pageRequests    PageRequest[]
+  addedBooks      Book[]       @relation("BookAdder")
+  editSuggests    BookEdit[]
+  claimedBooks    Book[]       @relation("BookClaimer")
   uploadedPreviews PagePreview[]
 }
 
@@ -40,36 +41,36 @@ model Category {
 }
 
 model Book {
-  id            String   @id @default(cuid())
-  title         String
-  titleSi       String? // Sinhala title
-  titleTa       String? // Tamil title
-  author        String
-  publisher     String?
-  isbn          String?
-  language      String   @default("english") // sinhala, english, tamil
-  year          Int?
-  pageCount     Int?
-  description   String?
-  coverImage    String?
-  categoryId    String?
-  status        String   @default("community") // community, verified
-  addedById     String
-  claimedById   String?
-  likes         Int      @default(0)
-  readingCount  Int      @default(0)
-  listeningCount Int     @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id             String   @id @default(cuid())
+  title          String
+  titleSi        String? // Sinhala title
+  titleTa        String? // Tamil title
+  author         String
+  publisher      String?
+  isbn           String?
+  language       String   @default("english") // sinhala, english, tamil
+  year           Int?
+  pageCount      Int?
+  description    String?
+  coverImage     String?
+  categoryId     String?
+  status         String   @default("community") // community, verified
+  addedById      String
+  claimedById    String?
+  likes          Int      @default(0)
+  readingCount   Int      @default(0)
+  listeningCount Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  category     Category?  @relation(fields: [categoryId], references: [id])
-  addedBy      User       @relation("BookAdder", fields: [addedById], references: [id])
-  claimedBy    User?      @relation("BookClaimer", fields: [claimedById], references: [id])
-  bookshelves  Bookshelf[]
-  comments     Comment[]
-  pagePreviews PagePreview[]
-  pageRequests PageRequest[]
-  edits        BookEdit[]
+  category        Category?    @relation(fields: [categoryId], references: [id])
+  addedBy         User         @relation("BookAdder", fields: [addedById], references: [id])
+  claimedBy       User?        @relation("BookClaimer", fields: [claimedById], references: [id])
+  bookshelves     Bookshelf[]
+  comments        Comment[]
+  pagePreviews    PagePreview[]
+  pageRequests    PageRequest[]
+  edits           BookEdit[]
 }
 
 model Bookshelf {
@@ -79,8 +80,8 @@ model Bookshelf {
   status    String   @default("want_to_read") // want_to_read, currently_reading, finished
   addedAt   DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id])
-  book Book @relation(fields: [bookId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
 
   @@unique([userId, bookId])
 }
@@ -92,20 +93,20 @@ model Comment {
   bookId    String
   createdAt DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id])
-  book Book @relation(fields: [bookId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
 }
 
 model PagePreview {
-  id          String   @id @default(cuid())
-  bookId      String
-  pageNumber  Int
-  content     String   // text content of the preview page
+  id           String   @id @default(cuid())
+  bookId       String
+  pageNumber   Int
+  content      String // text content of the preview page
   uploadedById String
-  createdAt   DateTime @default(now())
+  createdAt    DateTime @default(now())
 
-  book      Book @relation(fields: [bookId], references: [id])
-  uploadedBy User @relation(fields: [uploadedById], references: [id])
+  book      Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  uploadedBy User @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
 }
 
 model PageRequest {
@@ -118,8 +119,8 @@ model PageRequest {
   status    String   @default("pending") // pending, fulfilled, declined
   createdAt DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id])
-  book Book @relation(fields: [bookId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
 }
 
 model BookEdit {
@@ -132,6 +133,6 @@ model BookEdit {
   status    String   @default("pending") // pending, approved, rejected
   createdAt DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id])
-  book Book @relation(fields: [bookId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
 }

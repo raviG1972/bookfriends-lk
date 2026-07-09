@@ -1,5 +1,6 @@
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
+import bcrypt from 'bcryptjs'
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,12 +22,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Note: In production, password should be hashed with bcrypt
+    const hashedPassword = await bcrypt.hash(password, 10)
+
     const user = await db.user.create({
       data: {
         name,
         email,
-        password,
+        password: hashedPassword,
         preferredLanguages: preferredLanguages || 'english',
       },
     })
@@ -35,9 +37,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, data: userWithoutPassword }, { status: 201 })
   } catch (error) {
-    console.error('Error registering user (database unavailable):', error)
+    console.error('Error registering user:', error)
     return NextResponse.json(
-      { success: false, data: null, error: 'Database is currently unavailable. Registration will be saved locally in your browser.' },
+      { success: false, data: null, error: 'Registration failed. Please try again.' },
       { status: 500 }
     )
   }

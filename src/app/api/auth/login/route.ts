@@ -1,5 +1,6 @@
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
+import bcrypt from 'bcryptjs'
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,7 +16,16 @@ export async function POST(request: NextRequest) {
 
     const user = await db.user.findUnique({ where: { email } })
 
-    if (!user || user.password !== password) {
+    if (!user) {
+      return NextResponse.json(
+        { success: false, data: null, error: 'Invalid email or password' },
+        { status: 401 }
+      )
+    }
+
+    const isValid = await bcrypt.compare(password, user.password)
+
+    if (!isValid) {
       return NextResponse.json(
         { success: false, data: null, error: 'Invalid email or password' },
         { status: 401 }
@@ -26,9 +36,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, data: userWithoutPassword })
   } catch (error) {
-    console.error('Error logging in (database unavailable):', error)
+    console.error('Error logging in:', error)
     return NextResponse.json(
-      { success: false, data: null, error: 'Database is currently unavailable. Please try the demo login (demo@bookfriends.lk / demo123) or register locally.' },
+      { success: false, data: null, error: 'Login failed. Please try again.' },
       { status: 500 }
     )
   }
