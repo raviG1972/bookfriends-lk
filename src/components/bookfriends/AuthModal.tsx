@@ -11,7 +11,7 @@ import { toast } from 'sonner'
 import { useAppStore } from '@/store/useAppStore'
 
 export default function AuthModal() {
-  const { setView, setUser, currentView } = useAppStore()
+  const { setView, setUser, currentView, loginLocal, registerLocal, loginAsDemo } = useAppStore()
   const isLogin = currentView === 'auth-login'
 
   // Login state
@@ -54,34 +54,33 @@ export default function AuthModal() {
     if (!validateLogin()) return
 
     setLoginLoading(true)
+    // Try server first, then fall back to client-side
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: loginEmail, password: loginPassword }),
       })
-      if (!res.ok) {
-        const json = await res.json().catch(() => ({}))
-        toast.error(json.error || `Server error (${res.status})`)
-        return
+      if (res.ok) {
+        const json = await res.json()
+        if (json.success) {
+          setUser(json.data)
+          localStorage.setItem('bookfriends-user', JSON.stringify(json.data))
+          toast.success(`Welcome back, ${json.data.name}!`)
+          setView('feed')
+          return
+        }
       }
-      const json = await res.json()
-      if (json.success) {
-        const userData = json.data
-        setUser(userData)
-        localStorage.setItem('bookfriends-user', JSON.stringify(userData))
-        toast.success(`Welcome back, ${userData.name}!`)
-        // Go to feed directly for returning users
-        setView('feed')
-      } else {
-        toast.error(json.error || 'Login failed')
-      }
-    } catch (err) {
-      console.error('Login error:', err)
-      toast.error('Network error. Please try again.')
-    } finally {
-      setLoginLoading(false)
+    } catch { /* server unavailable, fall through */ }
+    // Client-side fallback
+    const result = loginLocal(loginEmail, loginPassword)
+    if (result.success && result.user) {
+      toast.success(`Welcome back, ${result.user.name}!`)
+      setView('feed')
+    } else {
+      toast.error(result.error || 'Login failed')
     }
+    setLoginLoading(false)
   }
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -89,6 +88,7 @@ export default function AuthModal() {
     if (!validateRegister()) return
 
     setRegLoading(true)
+    // Try server first, then fall back to client-side
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
@@ -100,27 +100,36 @@ export default function AuthModal() {
           preferredLanguages: 'english',
         }),
       })
-      if (!res.ok) {
-        const json = await res.json().catch(() => ({}))
-        toast.error(json.error || `Server error (${res.status})`)
-        return
+      if (res.ok) {
+        const json = await res.json()
+        if (json.success) {
+          setUser(json.data)
+          localStorage.setItem('bookfriends-user', JSON.stringify(json.data))
+          toast.success(`Welcome to BookFriends, ${json.data.name}!`)
+          setView('onboarding-categories')
+          return
+        }
+        if (res.status === 409) {
+ toast.error('Email already registered')
+          return
+        }
       }
-      const json = await res.json()
-      if (json.success) {
-        const userData = json.data
-        setUser(userData)
-        localStorage.setItem('bookfriends-user', JSON.stringify(userData))
-        toast.success(`Welcome to BookFriends, ${userData.name}!`)
-        setView('onboarding-categories')
-      } else {
-        toast.error(json.error || 'Registration failed')
-      }
-    } catch (err) {
-      console.error('Register error:', err)
-      toast.error('Network error. Please try again.')
-    } finally {
-      setRegLoading(false)
+    } catch { /* server unavailable, fall through */ }
+    // Client-side fallback
+    const result = registerLocal(regName, regEmail, regPassword)
+    if (result.success) {
+      toast.success(`Welcome to BookFriends, ${regName}!`)
+      setView('onboarding-categories')
+    } else {
+      toast.error(result.error || 'Registration failed')
     }
+    setRegLoading(false)
+  }
+
+  const handleDemoLogin = () => {
+    loginAsDemo()
+    toast.success('Welcome back, Demo User!')
+    setView('onboarding-categories')
   }
 
   return (
@@ -196,6 +205,22 @@ export default function AuthModal() {
                 disabled={loginLoading}
               >
                 {loginLoading ? 'Logging in...' : 'Login'}
+              </Button>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white px-2 text-muted-foreground">or</span>
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full rounded-lg h-11"
+                onClick={handleDemoLogin}
+              >
+                🎯 Try Demo Account
               </Button>
             </form>
           </TabsContent>
