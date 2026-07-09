@@ -66,7 +66,8 @@ export default function FeedView() {
           setHasMore(data.length === 20)
         }
       } catch {
-        // silent
+        // If fetch fails (e.g. serverless DB unavailable), stop infinite scroll
+        setHasMore(false)
       } finally {
         setLoading(false)
       }

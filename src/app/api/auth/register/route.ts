@@ -35,9 +35,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, data: userWithoutPassword }, { status: 201 })
   } catch (error) {
-    console.error('Error registering user:', error)
+    console.error('Error registering user (database unavailable):', error)
     return NextResponse.json(
-      { success: false, data: null, error: 'Failed to register' },
+      { success: false, data: null, error: 'Database is currently unavailable. Registration will be saved locally in your browser.' },
       { status: 500 }
     )
   }

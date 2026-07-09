@@ -1,4 +1,5 @@
 import { db } from '@/lib/db'
+import { SEED_CATEGORIES } from '@/lib/seed-data'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
@@ -16,10 +17,8 @@ export async function GET() {
 
     return NextResponse.json({ success: true, data })
   } catch (error) {
-    console.error('Error fetching categories:', error)
-    return NextResponse.json(
-      { success: false, data: null, error: 'Failed to fetch categories' },
-      { status: 500 }
-    )
+    // Database unavailable — use seed data fallback
+    console.error('Database unavailable, using seed categories fallback:', error)
+    return NextResponse.json({ success: true, data: SEED_CATEGORIES })
   }
 }

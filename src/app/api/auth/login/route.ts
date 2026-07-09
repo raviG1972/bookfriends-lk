@@ -26,9 +26,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, data: userWithoutPassword })
   } catch (error) {
-    console.error('Error logging in:', error)
+    console.error('Error logging in (database unavailable):', error)
     return NextResponse.json(
-      { success: false, data: null, error: 'Failed to log in' },
+      { success: false, data: null, error: 'Database is currently unavailable. Please try the demo login (demo@bookfriends.lk / demo123) or register locally.' },
       { status: 500 }
     )
   }

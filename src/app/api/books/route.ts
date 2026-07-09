@@ -1,4 +1,5 @@
 import { db } from '@/lib/db'
+import { SEED_BOOKS } from '@/lib/seed-data'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
@@ -64,11 +65,70 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Error fetching books:', error)
-    return NextResponse.json(
-      { success: false, data: null, error: 'Failed to fetch books' },
-      { status: 500 }
-    )
+    // Database unavailable — use seed data fallback
+    console.error('Database unavailable, using seed data fallback:', error)
+
+    const { searchParams } = new URL(request.url)
+    const categoryId = searchParams.get('categoryId')
+    const language = searchParams.get('language')
+    const search = searchParams.get('search')
+    const sort = searchParams.get('sort') || 'newest'
+    const page = parseInt(searchParams.get('page') || '1', 10)
+    const limit = parseInt(searchParams.get('limit') || '20', 10)
+
+    let filtered = [...SEED_BOOKS]
+
+    // Apply categoryId filter
+    if (categoryId) {
+      filtered = filtered.filter((b) => b.categoryId === categoryId)
+    }
+
+    // Apply language filter (comma-separated)
+    if (language) {
+      const langs = language.split(',').map((l) => l.trim().toLowerCase())
+      filtered = filtered.filter((b) => langs.includes(b.language))
+    }
+
+    // Apply search filter
+    if (search) {
+      const q = search.toLowerCase()
+      filtered = filtered.filter(
+        (b) =>
+          b.title.toLowerCase().includes(q) ||
+          b.author.toLowerCase().includes(q)
+      )
+    }
+
+    // Apply sort
+    if (sort === 'popular') {
+      filtered.sort((a, b) => b.likes - a.likes)
+    } else if (sort === 'reading') {
+      filtered.sort((a, b) => b.readingCount - a.readingCount)
+    } else {
+      filtered.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )
+    }
+
+    // Apply pagination
+    const total = filtered.length
+    const totalPages = Math.ceil(total / limit)
+    const skip = (page - 1) * limit
+    const paginated = filtered.slice(skip, skip + limit)
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        books: paginated,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+        },
+      },
+    })
   }
 }
 
@@ -114,9 +174,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, data: book }, { status: 201 })
   } catch (error) {
-    console.error('Error creating book:', error)
+    console.error('Error creating book (database unavailable):', error)
     return NextResponse.json(
-      { success: false, data: null, error: 'Failed to create book' },
+      { success: false, data: null, error: 'Database is currently unavailable. Book creation is not supported in this environment.' },
       { status: 500 }
     )
   }
